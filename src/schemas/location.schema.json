@@ -1,0 +1,18 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "LocationUpserted",
+  "type": "object",
+  "properties": {
+    "eventType": { "type": "string" },
+    "payload": {
+      "type": "object",
+      "properties": {
+        "locationId": { "type": "string" },
+        "name": { "type": "string" },
+        "type": { "type": "string" }
+      },
+      "required": ["locationId", "name", "type"]
+    }
+  },
+  "required": ["eventType", "payload"]
+}
