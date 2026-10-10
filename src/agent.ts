@@ -11,9 +11,10 @@ import { resolveSchemaDir } from './config.js';
  */
 export async function processEventsFile(
   eventsFilePath: string,
+  analyzeDefects = true,
 ): Promise<InventoryService> {
   const validator = new ValidatorService();
-  const inventory = new InventoryService();
+  const inventory = new InventoryService(analyzeDefects);
   const consumer = new EventConsumerService(validator, inventory);
 
   const schemaDir = resolveSchemaDir();
@@ -45,7 +46,8 @@ export async function runAgent(
 ): Promise<void> {
   const { withAiQuery = false } = options;
 
-  const inventory = await processEventsFile(eventsFilePath);
+  // Sin consulta IA (auditoría programada) tampoco se analizan defectos con Gemini.
+  const inventory = await processEventsFile(eventsFilePath, withAiQuery);
   inventory.printSummary();
 
   if (withAiQuery) {
