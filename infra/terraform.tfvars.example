@@ -1,0 +1,9 @@
+aws_region           = "us-east-1"
+project_name         = "hack-saltillo-events"
+image_tag            = "latest"
+gemini_secret_name   = "hack-saltillo-events-gemini-api-key"
+schedule_expression  = "rate(10 minutes)"
+events_key           = "events.jsonl"
+log_retention_days   = 14
+lambda_memory_mb     = 512
+lambda_timeout_seconds = 60

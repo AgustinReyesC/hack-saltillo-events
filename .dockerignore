@@ -1,0 +1,14 @@
+node_modules
+dist
+.git
+.gitignore
+.terraform
+*.tfstate
+*.tfstate.*
+.env
+.env.*
+infra
+scripts
+data
+*.md
+*.log
