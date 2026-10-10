@@ -17,12 +17,15 @@ export class AIService {
         if (!text)
             return '';
         let formatted = text
-            // 1. Limpiamos asteriscos de Markdown sobrantes si los llega a poner
+            // 1. Limpiamos asteriscos de Markdown sobrantes
             .replace(/\*\*(.*?)\*\*/g, '$1')
             .replace(/\*(.*?)\*/g, '$1')
-            // 2. Forzamos un salto de línea limpio antes de cualquier viñeta o número para que no se amontonen
-            .replace(/([.?!])\s*([•\-\*]|\d+\.)/g, '$1\n\n$2')
-            .replace(/([a-zA-Z0-9])\s+([•\-\*])/g, '$1\n• ');
+            // 2. Forzamos saltos de línea antes de los títulos principales que llevan emojis o secciones clave
+            .replace(/([.?!])\s*(🔧|📦|⚠️|📍|✅|📊)/g, '$1\n\n$2')
+            .replace(/([a-zA-Z0-9\)])\s+(🔧|📦|⚠️|📍|✅|📊)/g, '$1\n\n$2')
+            // 3. Forzamos un salto de línea limpio antes de cada viñeta (•) para que nunca se amontonen
+            .replace(/([.?!])\s*(•|\-|\*)/g, '$1\n$2')
+            .replace(/([a-zA-Z0-9\)])\s+(•|\-|\*)/g, '$1\n• ');
         return formatted.trim();
     }
     /**
@@ -41,10 +44,10 @@ export class AIService {
 
         INSTRUCCIONES DE FORMATO ESTRICTAS:
         1. Sé claro, directo y profesional.
-        2. Utiliza emojis industriales relevantes (📦 para stock, ⚠️ para alertas/faltantes, 📍 para ubicaciones, 🔧 para reparaciones, ✅ para estados óptimos).
-        3. Estructura la respuesta usando saltos de línea claros entre párrafos.
-        4. Si vas a dar listas o puntos clave, colócalos obligatoriamente en renglones separados (un punto por línea), usando viñetas limpias (•).
-        5. No uses asteriscos de Markdown (** o *), presenta el texto limpio y ordenado para lectura en pantalla móvil/web.
+        2. Utiliza emojis industriales relevantes (📦 para stock, ⚠️ para alertas/faltantes, 📍 para ubicaciones, 🔧 para reparaciones).
+        3. IMPORTANTE: Cada sección principal (como 🔧 Órdenes de Trabajo Relacionadas o 📦 Estado Actual de Inventario) DEBE ir en una nueva línea separada por espacios en blanco.
+        4. Cada viñeta (•) DEBE ir obligatoriamente en su propio renglón independiente (un punto por línea), nunca de corrido.
+        5. No uses asteriscos de Markdown (** o *), presenta el texto limpio y ordenado.
       `;
             const response = await this.ai.models.generateContent({
                 model: this.modelName,
