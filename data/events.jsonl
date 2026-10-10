@@ -1,0 +1,4 @@
+{"eventId": "evt-001", "eventType": "part.upserted", "timestamp": "2026-10-09T10:00:00Z", "payload": {"partId": "p-101", "sku": "SKU-BOLT-01", "name": "Tornillo de Acero 1/4", "unitOfMeasure": "pzas"}}
+{"eventId": "evt-002", "eventType": "location.upserted", "timestamp": "2026-10-09T10:05:00Z", "payload": {"locationId": "loc-A1", "name": "Almacén Central Torreón", "type": "warehouse", "active": true}}
+{"eventId": "evt-003", "eventType": "inspection.submitted", "timestamp": "2026-10-09T10:30:00Z", "payload": {"inspectionId": "insp-99", "partId": "p-101", "locationId": "loc-A1", "quantity": 50, "inspectorId": "user-23", "notes": "Lote recibido en buen estado"}}
+{"eventId": "evt-004", "eventType": "purchase.item_received", "timestamp": "2026-10-09T11:00:00Z", "payload": {"purchaseOrderId": "po-500", "itemId": "item-01", "partId": "p-101", "locationId": "loc-A1", "quantityReceived": 200, "receivedBy": "user-23"}}
