@@ -28,22 +28,25 @@ export class AIService {
       .replace(/^#{1,6}\s+/gm, '')
       .replace(/^(\s*)[-*]\s+/gm, '$1• ')
 
-      // 2. Limpiamos asteriscos de Markdown sobrantes si los llega a poner
+      // 2. Limpiamos asteriscos de Markdown sobrantes
       .replace(/\*\*(.*?)\*\*/g, '$1')
       .replace(/\*(.*?)\*/g, '$1')
 
-      // 3. Cada viñeta • en su propio renglón aunque venga pegada al texto ("stock • A • B").
+      // 3. Forzamos saltos de línea antes de los títulos principales que llevan emojis o secciones clave
+      .replace(/([.?!])\s*(🔧|📦|⚠️|📍|✅|📊)/g, '$1\n\n$2')
+      .replace(/([a-zA-Z0-9\)])\s+(🔧|📦|⚠️|📍|✅|📊)/g, '$1\n\n$2')
+
+      // 4. Cada viñeta • en su propio renglón aunque venga pegada al texto ("stock • A • B").
       //    Solo el símbolo •: un guion a media frase ("5 - 3", "R061026012 - Motor") no es viñeta.
       .replace(/(\S)[ \t]*•[ \t]*/g, '$1\n• ')
 
-      // 4. Listas numeradas pegadas a la frase anterior ("Opciones: 1. Comprar 2. Reparar"),
+      // 5. Listas numeradas pegadas a la frase anterior ("Opciones: 1. Comprar 2. Reparar"),
       //    sin tocar decimales ni fechas (5.5, 10.10.2026)
       .replace(/([.?!:])[ \t]+(\d+\.\s)/g, '$1\n\n$2')
       .replace(/\n{3,}/g, '\n\n');
 
     return formatted.trim();
   }
-
   /**
    * Consulta general para el asistente de inventario (atiende a la UI)
    */
@@ -60,10 +63,10 @@ export class AIService {
 
         INSTRUCCIONES DE FORMATO ESTRICTAS:
         1. Sé claro, directo y profesional.
-        2. Utiliza emojis industriales relevantes (📦 para stock, ⚠️ para alertas/faltantes, 📍 para ubicaciones, 🔧 para reparaciones, ✅ para estados óptimos).
-        3. Estructura la respuesta usando saltos de línea claros entre párrafos.
-        4. Si vas a dar listas o puntos clave, colócalos obligatoriamente en renglones separados (un punto por línea), usando viñetas limpias (•).
-        5. No uses asteriscos de Markdown (** o *), presenta el texto limpio y ordenado para lectura en pantalla móvil/web.
+        2. Utiliza emojis industriales relevantes (📦 para stock, ⚠️ para alertas/faltantes, 📍 para ubicaciones, 🔧 para reparaciones).
+        3. IMPORTANTE: Cada sección principal (como 🔧 Órdenes de Trabajo Relacionadas o 📦 Estado Actual de Inventario) DEBE ir en una nueva línea separada por espacios en blanco.
+        4. Cada viñeta (•) DEBE ir obligatoriamente en su propio renglón independiente (un punto por línea), nunca de corrido.
+        5. No uses asteriscos de Markdown (** o *), presenta el texto limpio y ordenado.
       `;
 
       const response = await this.ai.models.generateContent({
