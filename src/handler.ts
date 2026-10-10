@@ -19,8 +19,8 @@ interface S3Record {
   };
 }
 
-// Presupuesto total para Gemini: la API, CloudFront y la Lambda cortan a los 60 s.
-const AI_BUDGET_MS = Number(process.env.AI_BUDGET_MS ?? 20000);
+// Presupuesto total para Gemini (+ ~8 s de la API): la API, CloudFront y la Lambda cortan a los 60 s.
+const AI_BUDGET_MS = Number(process.env.AI_BUDGET_MS ?? 40000);
 
 function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T | undefined> {
   return Promise.race([
