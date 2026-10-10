@@ -20,18 +20,35 @@ interface S3Record {
 }
 
 const AI_ERROR = 'Error al consultar el asistente de IA.';
+// Presupuesto total para Gemini: la API, CloudFront y la Lambda cortan a los 60 s.
+const AI_BUDGET_MS = Number(process.env.AI_BUDGET_MS ?? 20000);
+
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T | undefined> {
+  return Promise.race([
+    promise,
+    new Promise<undefined>((resolve) => setTimeout(() => resolve(undefined), ms)),
+  ]);
+}
 
 /**
  * Contesta una pregunta con el estado real del inventario (leído de la API).
- * Si Gemini no responde (p. ej. 503 por demanda), reintenta una vez y si no
- * devuelve un resumen sin IA.
+ * Si Gemini falla (p. ej. 503 por demanda) reintenta mientras quede presupuesto;
+ * si no contesta a tiempo, devuelve un resumen sin IA.
  */
 async function answerQuestion(question: string): Promise<string> {
   const snapshot = await fetchSnapshot();
   const ai = new AIService();
-  for (let attempt = 0; attempt < 2; attempt++) {
-    const answer = await ai.queryInventoryAssistant(describeSnapshot(snapshot), question);
+  const deadline = Date.now() + AI_BUDGET_MS;
+  while (Date.now() < deadline - 1000) {
+    const answer = await withTimeout(
+      ai.queryInventoryAssistant(describeSnapshot(snapshot), question),
+      deadline - Date.now(),
+    );
     if (answer && answer !== AI_ERROR) return answer;
+    if (answer === undefined) {
+      console.warn(`[Handler] Gemini no respondió en ${AI_BUDGET_MS} ms`);
+      break;
+    }
   }
   return `No pude consultar la IA en este momento. Estado actual: ${plainSummary(snapshot)}`;
 }
