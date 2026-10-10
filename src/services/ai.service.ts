@@ -34,6 +34,7 @@ export class AIService {
     }
   }
 
+<<<<<<< HEAD
   private cleanAiResponse(text: string): string {
     if (!text) return '';
 
@@ -44,6 +45,8 @@ export class AIService {
       .replace(/[-*]\s+/g, '• ');      // Normaliza guiones a viñetas limpias
   }
 
+=======
+>>>>>>> 5bbab08f38d1e352939f91f5af12e5ba93e8f343
   public async queryInventoryAssistant(inventoryStateSummary: string, userQuery: string): Promise<string> {
     try {
       const prompt = `
@@ -55,7 +58,11 @@ export class AIService {
         PREGUNTA DEL USUARIO / AUDITOR:
         "${userQuery}"
 
+<<<<<<< HEAD
         Responde de manera profesional, precisa y basada estrictamente en los datos del estado actual del inventario proporcionado. Evita usar demasiados símbolos de formato Markdown ya que la interfaz los muestra como texto plano.
+=======
+        Responde de manera profesional, precisa y basada estrictamente en los datos del estado actual del inventario proporcionado.
+>>>>>>> 5bbab08f38d1e352939f91f5af12e5ba93e8f343
       `;
 
       const response = await this.ai.models.generateContent({
@@ -63,11 +70,15 @@ export class AIService {
         contents: prompt,
       });
 
+<<<<<<< HEAD
       const rawText = response.text ? response.text.trim() : 'No se pudo procesar la consulta.';
       
       // Limpiamos la respuesta antes de regresarla a la UI
       return this.cleanAiResponse(rawText);
 
+=======
+      return response.text ? response.text.trim() : 'No se pudo procesar la consulta.';
+>>>>>>> 5bbab08f38d1e352939f91f5af12e5ba93e8f343
     } catch (error) {
       console.error('[AIService] Error en consulta al asistente:', error);
       return 'Error al consultar el asistente de IA.';
