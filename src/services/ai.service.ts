@@ -5,57 +5,53 @@ dotenv.config();
 
 export class AIService {
   private ai: GoogleGenAI;
-  private modelName = 'gemini-3.8-flash'; // 👈 Modelo estable estándar y compatible con el SDK actual
+  private modelName: string;
 
   constructor() {
-    const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
-    this.ai = new GoogleGenAI({ apiKey });
+    // Inicializa el cliente de Google Gen AI con tu API Key
+    this.ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+    // Usamos el modelo adecuado según la configuración de tu proyecto
+    this.modelName = 'gemini-3.8-flash'; 
   }
 
-  public async analyzeDefect(partName: string, defectDescription: string): Promise<string> {
-    try {
-      const prompt = `
-        Eres un asistente experto en gestión de inventario y control de calidad industrial.
-        Analiza el siguiente reporte o nota de inspección para la pieza "${partName}":
-        "${defectDescription}"
-
-        Determina si la acción recomendada debe ser "REPARAR" o "REEMPLAZAR" y da una breve justificación técnica de una sola línea.
-      `;
-
-      const response = await this.ai.models.generateContent({
-        model: this.modelName,
-        contents: prompt,
-      });
-
-      return response.text ? response.text.trim() : 'No se pudo generar una recomendación.';
-    } catch (error) {
-      console.error('[AIService] Error al comunicarse con Gemini (Defecto):', error);
-      return 'Error en el análisis de IA.';
-    }
-  }
-
-  private cleanAiResponse(text: string): string {
+  /**
+   * Da formato decorativo y asegura saltos de línea limpios para las viñetas y secciones.
+   */
+  private formatAiResponse(text: string): string {
     if (!text) return '';
 
-    // Opción A: Si quieres remover los asteriscos por completo para que no aparezcan en la UI:
-    return text
-      .replace(/\*\*(.*?)\*\*/g, '$1') // Remueve negritas (**texto** -> texto)
-      .replace(/\*(.*?)\*/g, '$1')     // Remueve cursivas (*texto* -> texto)
-      .replace(/[-*]\s+/g, '• ');      // Normaliza guiones a viñetas limpias
+    let formatted = text
+      // 1. Limpiamos asteriscos de Markdown sobrantes si los llega a poner
+      .replace(/\*\*(.*?)\*\*/g, '$1')
+      .replace(/\*(.*?)\*/g, '$1')
+      
+      // 2. Forzamos un salto de línea limpio antes de cualquier viñeta o número para que no se amontonen
+      .replace(/([.?!])\s*([•\-\*]|\d+\.)/g, '$1\n\n$2')
+      .replace(/([a-zA-Z0-9])\s+([•\-\*])/g, '$1\n• ');
+
+    return formatted.trim();
   }
 
+  /**
+   * Consulta general para el asistente de inventario (atiende a la UI)
+   */
   public async queryInventoryAssistant(inventoryStateSummary: string, userQuery: string): Promise<string> {
     try {
       const prompt = `
-        Eres el agente central de inteligencia artificial de un sistema de inventario industrial.
+        Eres el asistente inteligente experto en gestión de inventario industrial y almacenes.
         
-        ESTADO ACTUAL DEL INVENTARIO:
+        ESTADO ACTUAL DE LOS DATOS:
         ${inventoryStateSummary}
 
-        PREGUNTA DEL USUARIO / AUDITOR:
+        CONSULTA DEL USUARIO:
         "${userQuery}"
 
-        Responde de manera profesional, precisa y basada estrictamente en los datos del estado actual del inventario proporcionado. Evita usar demasiados símbolos de formato Markdown ya que la interfaz los muestra como texto plano.
+        INSTRUCCIONES DE FORMATO ESTRICTAS:
+        1. Sé claro, directo y profesional.
+        2. Utiliza emojis industriales relevantes (📦 para stock, ⚠️ para alertas/faltantes, 📍 para ubicaciones, 🔧 para reparaciones, ✅ para estados óptimos).
+        3. Estructura la respuesta usando saltos de línea claros entre párrafos.
+        4. Si vas a dar listas o puntos clave, colócalos obligatoriamente en renglones separados (un punto por línea), usando viñetas limpias (•).
+        5. No uses asteriscos de Markdown (** o *), presenta el texto limpio y ordenado para lectura en pantalla móvil/web.
       `;
 
       const response = await this.ai.models.generateContent({
@@ -64,13 +60,37 @@ export class AIService {
       });
 
       const rawText = response.text ? response.text.trim() : 'No se pudo procesar la consulta.';
-      
-      // Limpiamos la respuesta antes de regresarla a la UI
-      return this.cleanAiResponse(rawText);
+      return this.formatAiResponse(rawText);
 
     } catch (error) {
-      console.error('[AIService] Error en consulta al asistente:', error);
-      return 'Error al consultar el asistente de IA.';
+      console.error('[AIService] Error al generar respuesta estructurada:', error);
+      return '⚠️ Ocurrió un error al consultar el asistente de inventario.';
+    }
+  }
+
+  /**
+   * Analiza defectos reportados en inspecciones de calidad mediante IA
+   */
+  public async analyzeDefect(partName: string, notes: string): Promise<string> {
+    try {
+      const prompt = `
+        Eres el experto en control de calidad de un taller industrial.
+        Analiza las notas del defecto para la pieza "${partName}": "${notes}".
+        Proporciona una recomendación técnica breve sobre la acción a tomar (ej: reparar localmente, rechazar lote, comprar repuesto, etc.).
+        Sé directo y sin asteriscos de Markdown.
+      `;
+
+      const response = await this.ai.models.generateContent({
+        model: this.modelName,
+        contents: prompt,
+      });
+
+      const rawText = response.text ? response.text.trim() : 'Sin recomendación de calidad.';
+      return this.formatAiResponse(rawText);
+
+    } catch (error) {
+      console.error('[AIService] Error al analizar defecto con IA:', error);
+      return '⚠️ Error al procesar el análisis de defecto.';
     }
   }
 }
