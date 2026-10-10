@@ -5,12 +5,9 @@ export class InventoryService {
   private locations: Map<string, any> = new Map();
   private stockLevels: Map<string, number> = new Map();
   private aiService: AIService;
-  // false en la auditoría programada: corre cada 10 min y agotaba la cuota de Gemini del chat.
-  private analyzeDefects: boolean;
 
-  constructor(analyzeDefects = true) {
+  constructor() {
     this.aiService = new AIService();
-    this.analyzeDefects = analyzeDefects;
   }
 
   public async processEvent(event: { eventType: string; payload: any }): Promise<void> {
@@ -36,7 +33,7 @@ export class InventoryService {
         console.log(`   [Inventory] 🔍 Inspección registrada (${payload.inspectionId}): ${payload.quantity} unidades para parte ${payload.partId}`);
         
         // Si hay notas, usamos a Gemini para el análisis de calidad inteligente
-        if (payload.notes && this.analyzeDefects) {
+        if (payload.notes) {
           const partInfo = this.parts.get(payload.partId);
           const partName = partInfo ? partInfo.name : 'Pieza General';
           
