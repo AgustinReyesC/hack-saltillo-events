@@ -4,7 +4,7 @@ import { getGeminiApiKey } from './secrets.js';
 import { downloadS3ObjectToFile } from './s3.js';
 import { runAgent } from './agent.js';
 import { EVENTS_JSONL_FILENAME } from './config.js';
-import { AIService } from './services/ai.service.js';
+import { AI_QUERY_ERROR, AIService } from './services/ai.service.js';
 import {
   describeSnapshot,
   fetchSnapshot,
@@ -19,7 +19,6 @@ interface S3Record {
   };
 }
 
-const AI_ERROR = 'Error al consultar el asistente de IA.';
 // Presupuesto total para Gemini: la API, CloudFront y la Lambda cortan a los 60 s.
 const AI_BUDGET_MS = Number(process.env.AI_BUDGET_MS ?? 20000);
 
@@ -45,7 +44,7 @@ async function answerQuestion(question: string): Promise<string> {
       ai.queryInventoryAssistant(describeSnapshot(snapshot), question),
       deadline - Date.now(),
     );
-    if (answer && answer !== AI_ERROR) return answer;
+    if (answer && answer !== AI_QUERY_ERROR) return answer;
     if (answer === undefined) {
       console.warn(`[Handler] Gemini no respondió en ${AI_BUDGET_MS} ms`);
       break;
