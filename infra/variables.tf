@@ -53,9 +53,9 @@ variable "api_url" {
 }
 
 variable "lambda_architecture" {
-  description = "Arquitectura de la imagen (arm64 se construye nativo en Mac Apple Silicon)."
+  description = "Arquitectura de la imagen; debe coincidir con el --platform del docker build (x86_64 = linux/amd64)."
   type        = string
-  default     = "arm64"
+  default     = "x86_64"
 }
 
 variable "lambda_timeout_seconds" {
