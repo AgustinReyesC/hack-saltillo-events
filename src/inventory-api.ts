@@ -24,8 +24,8 @@ async function getJson<T>(path: string): Promise<T | undefined> {
   }
 }
 
-const items = async (path: string): Promise<Record<string, unknown>[]> =>
-  (await getJson<{ items: Record<string, unknown>[] }>(path))?.items ?? [];
+const items = async (path: string): Promise<Record<string, unknown>[] | undefined> =>
+  (await getJson<{ items: Record<string, unknown>[] }>(path))?.items;
 
 export interface InventorySnapshot {
   parts: Record<string, unknown>[];
@@ -33,18 +33,27 @@ export interface InventorySnapshot {
   reorders: Record<string, unknown>[];
   unmatched: Record<string, unknown>[];
   workOrders: Record<string, unknown>[];
+  // Secciones que la API no devolvió (timeout o error): no son "0", son desconocidas.
+  unavailable: string[];
 }
 
 /** Lee de la API lo que el agente necesita para contestar (existencias, faltantes, reabasto, órdenes). */
 export async function fetchSnapshot(): Promise<InventorySnapshot> {
-  const [parts, shortages, reorders, unmatched, workOrders] = await Promise.all([
-    items('/parts'),
-    items('/shortages'),
-    items('/reorder-suggestions'),
-    items('/unmatched-receipts'),
-    items('/work-orders'),
-  ]);
-  return { parts, shortages, reorders, unmatched, workOrders };
+  const sections = {
+    parts: '/parts',
+    shortages: '/shortages',
+    reorders: '/reorder-suggestions',
+    unmatched: '/unmatched-receipts',
+    workOrders: '/work-orders',
+  } as const;
+  const names = Object.keys(sections) as (keyof typeof sections)[];
+  const results = await Promise.all(names.map((name) => items(sections[name])));
+  const snapshot = { unavailable: [] as string[] } as InventorySnapshot;
+  names.forEach((name, index) => {
+    snapshot[name] = results[index] ?? [];
+    if (!results[index]) snapshot.unavailable.push(name);
+  });
+  return snapshot;
 }
 
 /** Texto compacto del estado para el prompt (sin pasar el catálogo completo). */
@@ -63,16 +72,22 @@ export function describeSnapshot(s: InventorySnapshot): string {
     reorder_suggestions: s.reorders.slice(0, 50),
     unmatched_receipts: s.unmatched.slice(0, 30),
     work_orders: s.workOrders.slice(0, 30),
+    sections_not_available: s.unavailable,
   });
 }
 
 /** Resumen sin IA, para cuando Gemini no responde. */
 export function plainSummary(s: InventorySnapshot): string {
+  const count = (name: keyof InventorySnapshot, list: unknown[]) =>
+    s.unavailable.includes(name) ? 'sin datos (la API no respondió)' : String(list.length);
   const withStock = s.parts.filter((p) => Number(p.on_hand ?? 0) > 0).length;
+  const catalog = s.unavailable.includes('parts')
+    ? 'sin datos (la API no respondió)'
+    : `${s.parts.length} piezas (${withStock} con existencia)`;
   return (
-    `Catálogo: ${s.parts.length} piezas (${withStock} con existencia). ` +
-    `Faltantes abiertos: ${s.shortages.length}. Sugerencias de reabasto: ${s.reorders.length}. ` +
-    `Recepciones sin relacionar: ${s.unmatched.length}. Órdenes de trabajo: ${s.workOrders.length}.`
+    `Catálogo: ${catalog}. ` +
+    `Faltantes abiertos: ${count('shortages', s.shortages)}. Sugerencias de reabasto: ${count('reorders', s.reorders)}. ` +
+    `Recepciones sin relacionar: ${count('unmatched', s.unmatched)}. Órdenes de trabajo: ${count('workOrders', s.workOrders)}.`
   );
 }
 
