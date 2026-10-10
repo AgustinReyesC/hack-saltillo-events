@@ -34,6 +34,16 @@ export class AIService {
     }
   }
 
+  private cleanAiResponse(text: string): string {
+    if (!text) return '';
+
+    // Opción A: Si quieres remover los asteriscos por completo para que no aparezcan en la UI:
+    return text
+      .replace(/\*\*(.*?)\*\*/g, '$1') // Remueve negritas (**texto** -> texto)
+      .replace(/\*(.*?)\*/g, '$1')     // Remueve cursivas (*texto* -> texto)
+      .replace(/[-*]\s+/g, '• ');      // Normaliza guiones a viñetas limpias
+  }
+
   public async queryInventoryAssistant(inventoryStateSummary: string, userQuery: string): Promise<string> {
     try {
       const prompt = `
@@ -45,7 +55,7 @@ export class AIService {
         PREGUNTA DEL USUARIO / AUDITOR:
         "${userQuery}"
 
-        Responde de manera profesional, precisa y basada estrictamente en los datos del estado actual del inventario proporcionado.
+        Responde de manera profesional, precisa y basada estrictamente en los datos del estado actual del inventario proporcionado. Evita usar demasiados símbolos de formato Markdown ya que la interfaz los muestra como texto plano.
       `;
 
       const response = await this.ai.models.generateContent({
@@ -53,7 +63,11 @@ export class AIService {
         contents: prompt,
       });
 
-      return response.text ? response.text.trim() : 'No se pudo procesar la consulta.';
+      const rawText = response.text ? response.text.trim() : 'No se pudo procesar la consulta.';
+      
+      // Limpiamos la respuesta antes de regresarla a la UI
+      return this.cleanAiResponse(rawText);
+
     } catch (error) {
       console.error('[AIService] Error en consulta al asistente:', error);
       return 'Error al consultar el asistente de IA.';
