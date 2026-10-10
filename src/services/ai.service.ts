@@ -5,7 +5,7 @@ dotenv.config();
 
 export class AIService {
   private ai: GoogleGenAI;
-  private modelName = 'gemini-3.8-flash'; // 👈 Modelo estable estándar y compatible con el SDK actual
+  private modelName = process.env.GEMINI_MODEL || 'gemini-3.8-flash'; // 👈 Modelo estable estándar y compatible con el SDK actual
 
   constructor() {
     const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;

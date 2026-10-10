@@ -46,6 +46,18 @@ variable "lambda_memory_mb" {
   default     = 512
 }
 
+variable "api_url" {
+  description = "URL base de la API de inventario (ALB de hack-saltillo-api). La API invoca esta Lambda por IAM para /chat y notificaciones."
+  type        = string
+  default     = "http://hack-saltillo-api-850670948.us-east-1.elb.amazonaws.com"
+}
+
+variable "lambda_architecture" {
+  description = "Arquitectura de la imagen (arm64 se construye nativo en Mac Apple Silicon)."
+  type        = string
+  default     = "arm64"
+}
+
 variable "lambda_timeout_seconds" {
   description = "Timeout (segundos) de la Lambda."
   type        = number
