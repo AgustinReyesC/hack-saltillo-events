@@ -39,7 +39,8 @@ async function answerQuestion(question: string): Promise<string> {
   const snapshot = await fetchSnapshot();
   const ai = new AIService();
   const deadline = Date.now() + AI_BUDGET_MS;
-  while (Date.now() < deadline - 1000) {
+  // Máximo 2 intentos: un 429 (cuota) o 503 no se arregla martillando a Gemini.
+  for (let attempt = 0; attempt < 2 && Date.now() < deadline - 1000; attempt++) {
     const answer = await withTimeout(
       ai.queryInventoryAssistant(describeSnapshot(snapshot), question),
       deadline - Date.now(),
